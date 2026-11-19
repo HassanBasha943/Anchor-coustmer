@@ -1,0 +1,632 @@
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANCHOR | Customer Store</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        aura: {
+                            obsidian: '#0F1115',
+                            slate: '#181B20',
+                            border: '#2A2F38',
+                            emerald: '#10B981',
+                            emeraldDark: '#059669',
+                            pearl: '#F8FAFC',
+                            muted: '#94A3B8',
+                            crimson: '#EF4444'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cinzel"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0F1115; }
+        ::-webkit-scrollbar-thumb { background: #10B981; border-radius: 3px; }
+        .bg-glass { background: rgba(15, 17, 21, 0.88); backdrop-filter: blur(14px); }
+    </style>
+</head>
+
+<body class="bg-aura-obsidian text-aura-pearl font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 bg-glass border-b border-aura-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative">
+            <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium uppercase tracking-widest text-aura-muted">
+                <button type="button" onclick="filterCategory('all')" class="hover:text-aura-emerald transition py-1">All</button>
+                <button type="button" onclick="filterCategory('hoodie')" class="hover:text-aura-emerald transition py-1">Hoodie</button>
+                <button type="button" onclick="filterCategory('suit')" class="hover:text-aura-emerald transition py-1">Suit</button>
+                <button type="button" onclick="filterCategory('outfit')" class="hover:text-aura-emerald transition py-1">Outfit</button>
+                <button type="button" onclick="filterCategory('t-shirt')" class="hover:text-aura-emerald transition py-1">T-Shirt</button>
+                <button type="button" onclick="filterCategory('sweetpants')" class="hover:text-aura-emerald transition py-1">Sweetpants</button>
+            </nav>
+
+            <div class="text-center mx-auto sm:mx-0">
+                <a href="#" class="font-serif text-3xl sm:text-4xl tracking-[0.2em] font-bold uppercase text-aura-pearl flex items-center justify-center gap-2">
+                    <span class="text-aura-emerald text-2xl">◈</span> <span>ANCHOR</span>
+                </a>
+                <span class="block text-[9px] uppercase tracking-[0.35em] text-aura-emerald font-medium -mt-1">Exclusive Edition</span>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button type="button" onclick="toggleCartDrawer()" class="text-aura-pearl hover:text-aura-emerald transition p-2 relative bg-aura-slate rounded-full border border-aura-border">
+                    <i class="fa-solid fa-bag-shopping text-lg"></i>
+                    <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-aura-emerald text-aura-obsidian text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-lg">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Image Lightbox Modal -->
+    <div id="image-modal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeImageModal()">
+        <div class="relative max-w-4xl max-h-[90vh] flex items-center justify-center" onclick="event.stopPropagation()">
+            <button type="button" onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-aura-emerald text-3xl p-2 focus:outline-none">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="lightbox-img" src="" alt="Full Product View" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-aura-emerald/40">
+        </div>
+    </div>
+
+    <!-- Product Catalog Grid -->
+    <section class="py-16 max-w-7xl mx-auto px-4 w-full flex-1">
+        <div class="text-center mb-14">
+            <span class="text-xs uppercase tracking-[0.35em] text-aura-emerald font-semibold">Signature Collection</span>
+            <h2 class="font-serif text-3xl sm:text-5xl text-aura-pearl mt-2">ANCHOR's Drops</h2>
+            <div class="w-16 h-0.5 bg-aura-emerald mx-auto mt-4"></div>
+        </div>
+
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+    </section>
+
+    <!-- Shopping Bag Drawer -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex justify-end">
+        <div class="w-full max-w-md bg-aura-slate h-full p-6 flex flex-col shadow-2xl border-l border-aura-border">
+            <div class="flex items-center justify-between pb-4 border-b border-aura-border">
+                <h3 class="font-serif text-2xl text-aura-pearl">Shopping Bag</h3>
+                <button type="button" onclick="toggleCartDrawer()" class="text-aura-muted hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div id="cart-items-list" class="flex-1 overflow-y-auto py-4 space-y-4"></div>
+
+            <div class="pt-4 border-t border-aura-border space-y-3">
+                <div class="flex justify-between text-sm font-semibold text-aura-pearl">
+                    <span>Subtotal:</span>
+                    <span id="cart-total" class="text-aura-emerald font-serif text-xl font-bold">0 EGP</span>
+                </div>
+                <button type="button" onclick="openCheckoutModal()" class="w-full bg-aura-emerald text-aura-obsidian py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white transition shadow-lg flex items-center justify-center gap-2">
+                    Proceed to Checkout <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-aura-slate w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl p-6 relative border border-aura-emerald/50 flex flex-col overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-aura-border">
+                <h3 class="font-serif text-2xl font-bold text-aura-pearl flex items-center gap-2">
+                    <i class="fa-solid fa-credit-card text-aura-emerald"></i> Checkout Details
+                </h3>
+                <button type="button" onclick="closeCheckoutModal()" class="text-aura-muted hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="checkout-form" onsubmit="handleCheckoutSubmit(event)" class="py-4 space-y-3 text-xs flex-1">
+                <div>
+                    <label class="block text-aura-muted mb-1">Full Name *</label>
+                    <input type="text" id="cust-name" required placeholder="Your Name" class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1">Phone Number *</label>
+                    <input type="tel" id="cust-phone" required placeholder="010XXXXXXXX" class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1">Email Address *</label>
+                    <input type="email" id="cust-email" required placeholder="email@example.com" class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1 font-bold text-aura-pearl">Payment Method *</label>
+                    <select id="cust-payment" class="w-full bg-aura-obsidian border border-aura-emerald text-aura-pearl rounded-lg p-2.5 font-semibold focus:outline-none">
+                        <option value="Cash on Delivery">Cash on Delivery (الدفع عند الاستلام)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1">Governorate (المحافظة) *</label>
+                    <select id="cust-gov" class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none">
+                        <option value="Cairo">القاهرة (Cairo)</option>
+                        <option value="Giza">الجيزة (Giza)</option>
+                        <option value="Alexandria">الإسكندرية (Alexandria)</option>
+                        <option value="Qalyubia">القليوبية (Qalyubia)</option>
+                        <option value="Gharbia">الغربية (Gharbia)</option>
+                        <option value="Dakahlia">الدقهلية / المنصورة (Dakahlia)</option>
+                        <option value="Sharqia">الشرقية (Sharqia)</option>
+                        <option value="Monufia">المنوفية (Monufia)</option>
+                        <option value="Beheira">البحيرة (Beheira)</option>
+                        <option value="Kafr El Sheikh">كفر الشيخ (Kafr El Sheikh)</option>
+                        <option value="Damietta">دمياط (Damietta)</option>
+                        <option value="Port Said">بورسعيد (Port Said)</option>
+                        <option value="Ismailia">الإسماعيلية (Ismailia)</option>
+                        <option value="Suez">السويس (Suez)</option>
+                        <option value="Fayoum">الفيوم (Fayoum)</option>
+                        <option value="Beni Suef">بني سويف (Beni Suef)</option>
+                        <option value="Minya">المنيا (Minya)</option>
+                        <option value="Asyut">أسيوط (Asyut)</option>
+                        <option value="Sohag">سوهاج (Sohag)</option>
+                        <option value="Qena">قنا (Qena)</option>
+                        <option value="Luxor">الأقصر (Luxor)</option>
+                        <option value="Aswan">أسوان (Aswan)</option>
+                        <option value="Red Sea">البحر الأحمر (Red Sea)</option>
+                        <option value="New Valley">الوادي الجديد (New Valley)</option>
+                        <option value="Matrouh">مطروح (Matrouh)</option>
+                        <option value="North Sinai">شمال سيناء (North Sinai)</option>
+                        <option value="South Sinai">جنوب سيناء (South Sinai)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1">Detailed Address *</label>
+                    <textarea id="cust-address" required rows="2" placeholder="Street / Building / Floor..." class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-aura-muted mb-1">Delivery Notes (Optional)</label>
+                    <input type="text" id="cust-notes" placeholder="e.g. Call before delivery" class="w-full bg-aura-obsidian border border-aura-border text-aura-pearl rounded-lg p-2.5 focus:border-aura-emerald focus:outline-none">
+                </div>
+
+                <div class="pt-3 border-t border-aura-border flex justify-between text-sm font-semibold text-aura-pearl">
+                    <span>Total Amount:</span>
+                    <span id="checkout-modal-total" class="text-aura-emerald font-serif text-xl font-bold">0 EGP</span>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-aura-emerald text-aura-obsidian py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white transition shadow-lg mt-2">
+                    Confirm Order
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-aura-slate text-aura-pearl px-5 py-3 rounded-xl shadow-2xl text-xs transition-all duration-300 translate-y-32 opacity-0 border border-aura-emerald">
+        <span id="toast-message">Action successful!</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-aura-slate text-aura-muted pt-10 pb-8 border-t border-aura-border text-center text-xs">
+        <p>©️ 2026 ANCHOR Apparel Cairo. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        const SUPABASE_URL = 'https://rfazxdudrjjslszjdmlh.supabase.co';
+
+        const SUPABASE_KEY = 'sb_publishable_g5sk-Uy9_lLzrXEVhncnlw_v_DPDhHS';
+
+        const supabaseClient = supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+
+        const FALLBACK_IMG = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=800&auto=format&fit=crop';
+
+        const DEFAULT_PRODUCTS = [
+            {
+                id: 'a1',
+                name: 'Obsidian Tailored Suit',
+                category: 'suit',
+                price: 3600,
+                image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=800&auto=format&fit=crop',
+                fabric: 'Premium Wool Blend'
+            },
+            {
+                id: 'a2',
+                name: 'Emerald Street Outfit',
+                category: 'outfit',
+                price: 2900,
+                image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
+                fabric: '100% Heavy Cotton'
+            },
+            {
+                id: 'a3',
+                name: 'Essential Noir T-Shirt',
+                category: 't-shirt',
+                price: 1150,
+                image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800&auto=format&fit=crop',
+                fabric: 'Egyptian Combed Cotton'
+            },
+            {
+                id: 'a4',
+                name: 'Urban Stealth Sweatpants',
+                category: 'sweetpants',
+                price: 1700,
+                image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
+                fabric: 'Brushed Fleece'
+            }
+        ];
+
+        let PRODUCTS = [];
+        let cart = [];
+
+        // Customer-only page: no admin session or dashboard.
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                cart = JSON.parse(localStorage.getItem('aura_cart') || '[]');
+            } catch (error) {
+                cart = [];
+            }
+
+            await fetchProductsFromDb();
+            updateCartUI();
+        });
+
+        async function fetchProductsFromDb() {
+            const { data, error } = await supabaseClient
+                .from('products')
+                .select('*');
+
+            if (error) {
+                console.error('Supabase fetch error:', error);
+                PRODUCTS = [...DEFAULT_PRODUCTS];
+            } else if (data && data.length > 0) {
+                PRODUCTS = data.map(row => ({
+                    id: row.id,
+                    ...row.product_data
+                }));
+            } else {
+                PRODUCTS = [...DEFAULT_PRODUCTS];
+            }
+
+            renderProducts(PRODUCTS);
+        }
+
+        function renderProducts(items) {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = '';
+
+            items.forEach(product => {
+                const card = document.createElement('div');
+
+                card.className = 'group flex flex-col bg-aura-slate rounded-2xl overflow-hidden border border-aura-border shadow-lg transition hover:border-aura-emerald/60';
+
+                card.innerHTML = `
+                    <div class="relative aspect-[3/4] overflow-hidden bg-aura-obsidian cursor-pointer" onclick="openImageModal('${product.image}')">
+                        <img src="${product.image}" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';" alt="${product.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-95 group-hover:opacity-100">
+
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <span class="bg-aura-slate/90 text-aura-emerald border border-aura-emerald/40 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md">
+                                <i class="fa-solid fa-expand"></i> Full View
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-5 flex flex-col flex-1">
+                        <span class="text-[10px] uppercase tracking-widest text-aura-emerald font-bold">${product.category}</span>
+
+                        <h3 class="font-serif text-lg text-aura-pearl font-semibold mt-0.5">${product.name}</h3>
+
+                        <p class="text-xs text-aura-muted mt-1">${product.fabric || 'Exclusive Tailoring'}</p>
+
+                        <div class="mt-3">
+                            <label class="block text-[10px] uppercase tracking-wider text-aura-muted font-semibold mb-1.5">Size:</label>
+
+                            <div class="flex gap-2" id="sizes-${product.id}">
+                                <button type="button" onclick="selectSize('${product.id}', 'S', this)" class="size-btn-${product.id} px-2.5 py-1 text-xs border border-aura-border text-aura-muted rounded-lg hover:border-aura-emerald transition">S</button>
+
+                                <button type="button" onclick="selectSize('${product.id}', 'M', this)" class="size-btn-${product.id} px-2.5 py-1 text-xs border border-aura-emerald bg-aura-emerald text-aura-obsidian font-bold rounded-lg transition">M</button>
+
+                                <button type="button" onclick="selectSize('${product.id}', 'L', this)" class="size-btn-${product.id} px-2.5 py-1 text-xs border border-aura-border text-aura-muted rounded-lg hover:border-aura-emerald transition">L</button>
+
+                                <button type="button" onclick="selectSize('${product.id}', 'XL', this)" class="size-btn-${product.id} px-2.5 py-1 text-xs border border-aura-border text-aura-muted rounded-lg hover:border-aura-emerald transition">XL</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-auto pt-4 flex items-center justify-between border-t border-aura-border">
+                            <span class="font-serif text-lg font-bold text-aura-pearl">${product.price} EGP</span>
+
+                            <button onclick="addToCartWithSelectedSize('${product.id}')" class="bg-aura-emerald text-aura-obsidian hover:bg-white px-3.5 py-2 rounded-xl font-bold text-xs transition">
+                                Add to Bag
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        const selectedSizes = {};
+
+        function selectSize(productId, size, btn) {
+            selectedSizes[productId] = size;
+
+            const buttons = document.querySelectorAll(`.size-btn-${productId}`);
+
+            buttons.forEach(b => {
+                b.classList.remove(
+                    'bg-aura-emerald',
+                    'text-aura-obsidian',
+                    'font-bold',
+                    'border-aura-emerald'
+                );
+
+                b.classList.add(
+                    'border-aura-border',
+                    'text-aura-muted'
+                );
+            });
+
+            btn.classList.add(
+                'bg-aura-emerald',
+                'text-aura-obsidian',
+                'font-bold',
+                'border-aura-emerald'
+            );
+
+            btn.classList.remove(
+                'border-aura-border',
+                'text-aura-muted'
+            );
+        }
+
+        function addToCartWithSelectedSize(id) {
+            const p = PRODUCTS.find(item => item.id === id);
+            if (!p) return;
+
+            const chosenSize = selectedSizes[id] || 'M';
+            const itemKey = `${id}-${chosenSize}`;
+            const existingItem = cart.find(i => i.itemKey === itemKey);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    ...p,
+                    itemKey: itemKey,
+                    size: chosenSize,
+                    quantity: 1
+                });
+            }
+
+            localStorage.setItem('aura_cart', JSON.stringify(cart));
+
+            updateCartUI();
+            showToast(`Added (${chosenSize}) to bag!`);
+        }
+
+        function removeFromCart(itemKey) {
+            cart = cart.filter(i => i.itemKey !== itemKey);
+
+            localStorage.setItem('aura_cart', JSON.stringify(cart));
+
+            updateCartUI();
+            showToast('Removed from bag');
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-badge').innerText =
+                cart.reduce((s, i) => s + i.quantity, 0);
+
+            const list = document.getElementById('cart-items-list');
+
+            list.innerHTML = cart.length === 0
+                ? '<p class="text-center text-xs text-aura-muted py-8">Your bag is empty.</p>'
+                : '';
+
+            let total = 0;
+
+            cart.forEach(i => {
+                total += i.price * i.quantity;
+
+                list.innerHTML += `
+                    <div class="flex items-center justify-between bg-aura-obsidian p-3 rounded-xl border border-aura-border text-xs">
+                        <div>
+                            <p class="font-semibold text-aura-pearl">${i.name}</p>
+                            <p class="text-aura-emerald font-bold">Size: ${i.size} | ${i.price} EGP × ${i.quantity}</p>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-aura-pearl">${i.price * i.quantity} EGP</span>
+
+                            <button onclick="removeFromCart('${i.itemKey}')" class="text-aura-crimson hover:text-red-400 p-1 text-sm">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('cart-total').innerText = total + ' EGP';
+        }
+
+        function openImageModal(imgUrl) {
+            document.getElementById('lightbox-img').src = imgUrl;
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+        }
+
+        function filterCategory(cat) {
+            if (cat === 'all') {
+                renderProducts(PRODUCTS);
+            } else {
+                renderProducts(PRODUCTS.filter(p => p.category === cat));
+            }
+        }
+
+        function openCheckoutModal() {
+            if (cart.length === 0) {
+                alert('Your shopping bag is empty!');
+                return;
+            }
+
+            let total = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+
+            document.getElementById('checkout-modal-total').innerText = total + ' EGP';
+
+            toggleCartDrawer();
+
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        // Checkout: send the order directly to Telegram through Supabase.
+        // Formspree has been completely removed.
+        async function handleCheckoutSubmit(e) {
+            e.preventDefault();
+
+            if (!cart.length) {
+                alert('Your shopping bag is empty!');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Sending Order...';
+
+            const orderSummary = cart.map(i =>
+                `• ${i.name} (مقاس: ${i.size} | كمية: ${i.quantity}) - ${i.price * i.quantity} EGP`
+            ).join('\n');
+
+            const totalAmount = cart.reduce(
+                (s, i) => s + (i.price * i.quantity), 0
+            ) + ' EGP';
+
+            const method = document.getElementById('cust-payment').value;
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            const email = document.getElementById('cust-email').value.trim();
+            const gov = document.getElementById('cust-gov').value;
+            const address = document.getElementById('cust-address').value.trim();
+            const notes = document.getElementById('cust-notes').value.trim() || 'لا يوجد';
+
+            try {
+                const { data: telegramData, error: telegramError } =
+                    await supabaseClient.functions.invoke('anchor-telegram-orders', {
+                        body: {
+                            name,
+                            phone,
+                            email,
+                            governorate: gov,
+                            address,
+                            products: orderSummary,
+                            payment_method: method,
+                            notes,
+                            total: totalAmount
+                        }
+                    });
+
+                if (telegramError) {
+                    let details = telegramError.message || 'Unknown function error';
+
+                    if (telegramError.context) {
+                        try {
+                            const responseText =
+                                await telegramError.context.clone().text();
+
+                            if (responseText) {
+                                details += '\n' + responseText;
+                            }
+                        } catch (readError) {
+                            console.warn(
+                                'Could not read function error response:',
+                                readError
+                            );
+                        }
+                    }
+
+                    console.error('Telegram Function Error:', telegramError);
+                    throw new Error(details);
+                }
+
+                if (!telegramData || telegramData.success !== true) {
+                    console.error('Telegram Function Response:', telegramData);
+
+                    throw new Error(
+                        telegramData?.error ||
+                        'Telegram did not confirm the order.'
+                    );
+                }
+
+                // The order is sent securely through the Supabase Edge Function.
+                // No customer-side admin order dashboard or local order archive.
+
+                // Clear cart only after successful Telegram confirmation.
+                cart = [];
+                localStorage.removeItem('aura_cart');
+
+                document.getElementById('checkout-form').reset();
+
+                updateCartUI();
+
+                showToast('تم إرسال الطلب بنجاح إلى تيليجرام!');
+
+                setTimeout(() => {
+                    closeCheckoutModal();
+                    window.location.href = window.location.pathname;
+                }, 2000);
+
+            } catch (err) {
+                console.error('Order submission error:', err);
+
+                alert(
+                    'فشل إرسال الأوردر إلى تيليجرام.\n\n' +
+                    (err?.message || 'Unknown error') +
+                    '\n\nالسلة لم يتم مسحها، حاول مرة أخرى.'
+                );
+
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Confirm Order';
+            }
+        }
+
+        function toggleCartDrawer() {
+            document.getElementById('cart-drawer').classList.toggle('hidden');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+
+            document.getElementById('toast-message').innerText = msg;
+
+            t.classList.remove('translate-y-32', 'opacity-0');
+
+            setTimeout(() => {
+                t.classList.add('translate-y-32', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
